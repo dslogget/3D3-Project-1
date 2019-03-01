@@ -11,6 +11,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <time.h>
 
 #include "HTTP.h"
 

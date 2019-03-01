@@ -28,6 +28,7 @@ Server::Server(const char* serverIP, int port)
         throw(3);
     }
     std::cout << "listening" << std::endl;
+
 }
 
 Server::~Server()
@@ -47,7 +48,21 @@ void Server::accept_new()
     socklen_t clientsize = sizeof(clientaddr);
 
 
+
     clientsock = accept(socketfd, (struct sockaddr*)&clientaddr, &clientsize);
+
+
+    struct timeval timeout;
+    timeout.tv_sec = 20;
+    timeout.tv_usec = 0;
+
+    if(setsockopt(clientsock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
+        std::cout << "Cannot set properties" << std::endl;
+        std::cout << errno << std::endl;
+        throw(4);
+    }
+
+
     //std::cout << clientsock << std::endl;
 
     //std::thread thread(handle_request, clientsock);
@@ -73,25 +88,26 @@ void handle_request(int clientsock)
     int sizeRecv = recv(clientsock, buf, 1024, 0);
     std::cout << buf << std::endl;
     bool persist = 0;
-    do{
-        HTTPRequest req(buf, wrkdir);
-        persist = req.keep_alive;
+    if(sizeRecv > 0){
+        do{
+            HTTPRequest req(buf, wrkdir);
+            persist = req.keep_alive;
 
 
-        const std::string res = req.get_response();
-        std::cout << res << std::endl;
-        int len = res.length();
+            const std::string res = req.get_response();
+            std::cout << res << std::endl;
+            int len = res.length();
 
-        int oldlen = 0;
-        while(len > 0){
-            send(clientsock, &res.c_str()[oldlen], len, 0);
-            oldlen = len;
-            len = res.length() - len;
-        }
-        sizeRecv = recv(clientsock, buf, 1024, 0);
+            int oldlen = 0;
+            while(len > 0){
+                send(clientsock, &res.c_str()[oldlen], len, 0);
+                oldlen = len;
+                len = res.length() - len;
+            }
+            sizeRecv = recv(clientsock, buf, 1024, 0);
 
-    }while(sizeRecv && persist);
-
+        }while((sizeRecv > 0) && persist);
+    }
 
 
     std::cout << "shutting down" << std::endl;
