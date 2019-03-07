@@ -118,7 +118,7 @@ HTTPRequest::HTTPRequest(char* message, char* workingdir)
                 }
             }
         }else{
-            res += "400 Bad Request\r\n";
+            res += "400 Bad Request";
             if(keep_alive){
                 res+= "Connection: keep-alive\r\n";
                 res+= "Keep-Alive: timeout=10, max=20\r\n";
